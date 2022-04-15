@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# EN COURS, CERTAINES PARTIES NE SONT PAS FONCTIONNELLES, OU SYNTAXIQUEMENT FAUSSES. C'EST NORMAL
+
 # TITRE Ssh
 # DESCRIPTION Script permettant de faire un ssh plus évolué.
 # En étant sur <serveur de rebond>, le script utilisera le référentiel pour récupéré le nom long.
