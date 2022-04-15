@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# TITRE Ssh
+# DESCRIPTION Script permettant de faire un ssh plus évolué.
+# En étant sur <serveur de rebond>, le script utilisera le référentiel pour récupéré le nom long.
+# Sinon, le script permet d'ajouter le domaine pour avoir le nom complet
+# Il permet aussi de supprimer la ligne correspondant au serveur dans le known_hosts.
+
+# ATTENTION : Ce script source un fichier d'environnement Ssh_env, contenant 2 éléments : 
+# FIC_REF   : Le chemin d'un référentiel, une liste complète des serveurs avec leur nom long, avec d'autres informations.
+# SERV_REB  : Indique le nom du serveur de rebond sur lequel est présent le référentiel.
+
+# HISTORIQUE :
+# T |  Date        |  Auteur                      |  Description
+#---+--------------+------------------------------+------------------------------------
+# A |  14/04/2021  |  Polaris4759                 |  Creation
+# -------------------------------------------------------------------------------------
+
+
+#########################################
+##        DEFINITION FONCTIONS         ##
+#########################################
+
+
+
+#########################################
+##    DECLARATION DES VARIABLES        ##
+#########################################
+
+
+
+#########################################
+##    PROGRAMME PRINCIPAL              ##
+#########################################
+
+. Ssh_env
+
+[[ -z $SERV_REB ]] && echo "La variable SERV_REB n'est pas valorisée (Serveur de rebond contenant le réferentiel)"
+[[ -z $FIC_REF ]] && echo "La variable FIC_REF n'est pas valorisée (Chemin vers le référentiel)"
+FIC_REF=/da/soc/np/si/csi/oper/apdt/adm_srv/data/PRA/config/ref_unix/liste_reference.txt
+
+#Vérification de l'host
+if [ $HOSTNAME = $SERV_REB ];then
+        serveur=`grep -i $1 $FIC_REF | awk -F';' '{print($1)}'`
+        if [ $rech -eq 1 ];then
+                grep -i $1 $FIC_REF
+        else
+                if [ `echo $serveur | wc -l` -eq 1 ];then
+                        ssh $serveur
+                elif [ `echo $serveur | wc -l` -eq 0 ];then
+                        echo "Le serveur $1 n'est pas présent dans le référentiel"
+                else
+                        echo "Il y a plusieurs entrées dans le référentiel pour le serveur $1"
+        fi
+fi
