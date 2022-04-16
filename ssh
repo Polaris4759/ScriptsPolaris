@@ -39,7 +39,6 @@
 
 [[ -z $SERV_REB ]] && echo "La variable SERV_REB n'est pas valorisée (Serveur de rebond contenant le réferentiel)"
 [[ -z $FIC_REF ]] && echo "La variable FIC_REF n'est pas valorisée (Chemin vers le référentiel)"
-FIC_REF=/da/soc/np/si/csi/oper/apdt/adm_srv/data/PRA/config/ref_unix/liste_reference.txt
 
 #Vérification de l'host
 if [ $HOSTNAME = $SERV_REB ];then
