@@ -5,15 +5,30 @@
 
 Clear-Host
 
+# Récupération de l'espace disponible du disque
+$size = ((Get-Volume -DriveLetter C).SizeRemaining)/1MB
+#Conversion en MB
+#$size = $size/1MB
+
+# Récupération de l'espace requis
+$sizeneeded = ((Get-ChildItem . | Measure-Object Length -s).Sum)/1KB
+
+# Si la taille disponible est supérieure à la taille requise, copie du dossier vers le dossier Document
+if ($size -gt $sizeneeded){
+    Copy-Item . -Destination %HOMESHARE%/Documents
+}
+
+Set-Location "%HOMESHARE%/Documents"
+
 # Récupération des lignes contenant les caractères "%%"
-$file = Get-Content .\moba.txt
+$file = Get-Content -Path ".\MobaXterm Sessions.mxtsessions"
 foreach ($line in $file){if ($line -like "*%%*") {$line | out-file -FilePath .\moba2.txt -Append}}
 
 # Remplacement de chaque "%" par des retours à la ligne
-(Get-Content .\moba2.txt | Select-Object -First 1) -replace '%',"`r`n" | Set-Content -Path moba3.txt
+(Get-Content -Path .\temp1.txt | Select-Object -First 1) -replace '%',"`r`n" | Set-Content -Path .\temp2.txt
 
 # Récupération des lignes commençant par "e", et affectation dans une variable
-foreach ($line in (Get-Content -Path .\moba3.txt)) {if ($line.StartsWith('e')){$line2=$line}}
+foreach ($line in (Get-Content -Path .\temp2.txt)) {if ($line.StartsWith('e')){$line2=$line}}
 
 # Retrait du "e" dans la variable
 $olduser=($line2 -replace 'e','')
@@ -23,8 +38,11 @@ Write-Output "Le logon suivant va être remplacé : $olduser"
 $User=Read-Host -Prompt "Quel logon mettre à la place ?"
 
 # Remplacement de l'utilisateur dans le fichier de configuration
-(Get-Content -Path .\moba.txt -Raw) -replace $olduser,$User | set-content -Path .\moba.txt
+(Get-Content -Path ".\MobaXterm Sessions.mxtsessions" -Raw) -replace $olduser,$User | Set-Content -Path ".\MobaXterm Sessions.mxtsessions"
 
 # Suppression des fichiers temporaires
-Remove-Item -Path .\moba2.txt
-Remove-Item -Path .\moba3.txt
+Remove-Item -Path .\temp1.txt
+Remove-Item -Path .\temp2.txt
+
+# FIN DE SCRIPT
+Read-Host -Prompt "Fin du script"
