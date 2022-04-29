@@ -5,6 +5,16 @@
 
 Clear-Host
 
+# Test si le dossier cible existe
+$folder="%HOMESHARE%/Document"
+if (Test-Path -Path $folder){
+    Write-Output "Le chemin %HOMESHARE%/Documents existe bien"
+}else{
+    Write-Output "Le répertoire %HOMESHARE%/Documents n'existe pas"
+    Pause
+    exit
+}
+
 # Récupération de l'espace disponible du disque
 $size = ((Get-Volume -DriveLetter U).SizeRemaining)/1MB
 #Conversion en MB
@@ -15,7 +25,7 @@ $sizeneeded = ((Get-ChildItem . | Measure-Object Length -s).Sum)/1KB
 
 # Si la taille disponible est supérieure à la taille requise, copie du dossier vers le dossier Document
 if ($size -gt $sizeneeded){
-    Copy-Item . -Destination %HOMESHARE%/Documents
+    Copy-Item . -Destination "%HOMESHARE%/Documents"
 }else{
     Write-Host "Il n'y a pas assez de place sur le U. Merci de faire de la place et de relancer le script."
     pause
@@ -25,9 +35,9 @@ if ($size -gt $sizeneeded){
 Set-Location "%HOMESHARE%/Documents"
 
 # Récupération des lignes contenant les caractères "%%"
-echo "Récupération du fichier Sessions"
+Write-Output "Récupération du fichier Sessions"
 $file = Get-Content -Path ".\MobaXterm Sessions.mxtsessions"
-foreach ($line in $file){if ($line -like "*%%*") {$line | out-file -FilePath .\moba2.txt -Append}}
+foreach ($line in $file){if ($line -like "*%%*") {$line | out-file -FilePath .\temp1.txt -Append}}
 
 # Remplacement de chaque "%" par des retours à la ligne
 Write-host -nonewline "Récupération du e."
