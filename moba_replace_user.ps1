@@ -16,6 +16,10 @@ $sizeneeded = ((Get-ChildItem . | Measure-Object Length -s).Sum)/1KB
 # Si la taille disponible est supérieure à la taille requise, copie du dossier vers le dossier Document
 if ($size -gt $sizeneeded){
     Copy-Item . -Destination %HOMESHARE%/Documents
+}else{
+    Write-Host "Il n'y a pas assez de place sur le U. Merci de faire de la place et de relancer le script."
+    pause
+    exit
 }
 
 Set-Location "%HOMESHARE%/Documents"
