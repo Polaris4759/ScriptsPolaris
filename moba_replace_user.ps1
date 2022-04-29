@@ -6,7 +6,7 @@
 Clear-Host
 
 # Récupération de l'espace disponible du disque
-$size = ((Get-Volume -DriveLetter C).SizeRemaining)/1MB
+$size = ((Get-Volume -DriveLetter U).SizeRemaining)/1MB
 #Conversion en MB
 #$size = $size/1MB
 
@@ -21,16 +21,20 @@ if ($size -gt $sizeneeded){
 Set-Location "%HOMESHARE%/Documents"
 
 # Récupération des lignes contenant les caractères "%%"
+echo "Récupération du fichier Sessions"
 $file = Get-Content -Path ".\MobaXterm Sessions.mxtsessions"
 foreach ($line in $file){if ($line -like "*%%*") {$line | out-file -FilePath .\moba2.txt -Append}}
 
 # Remplacement de chaque "%" par des retours à la ligne
+Write-host -nonewline "Récupération du e."
 (Get-Content -Path .\temp1.txt | Select-Object -First 1) -replace '%',"`r`n" | Set-Content -Path .\temp2.txt
 
 # Récupération des lignes commençant par "e", et affectation dans une variable
+Write-host -nonewline "."
 foreach ($line in (Get-Content -Path .\temp2.txt)) {if ($line.StartsWith('e')){$line2=$line}}
 
 # Retrait du "e" dans la variable
+Write-host -nonewline "."
 $olduser=($line2 -replace 'e','')
 
 # Prompt du nouvel utilisateur
