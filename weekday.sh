@@ -14,7 +14,6 @@
 # VARIABLES #
 #############
 
-
 chscript=$(dirname $(readlink -f $0))
 namescript=`basename "$(realpath $0)"`
 blue="\e[36m"
@@ -65,18 +64,10 @@ do
         j)
         jour=$OPTARG
         ;;
-        #Le cas suivant permet de faire certaines actions si l'option est invalide
-        \?)
-        echo "$OPTARG : option invalide"
-        exit 1
-        ;;
-        #Le cas suivant (:) permet de faire certaines actions si l'option requiert un argument mais que ce dernier est manquant
-        :)
-        echo "L'option $OPTARG requiert un argument"
-        exit 1
-        ;;
     esac
 done
+
+if [ $# -eq 0 ];then usage;fi
 
 if [ ${#annee1} -ne 4 ] || [ ${#annee2} -ne 4 ];then echo "Les années doivent contenir 4 chiffres";fi
 if [ ${annee1} -ge ${annee2} ];then echo "L'année1 (-a) doit être plus petite que l'année2 (-A)";fi
