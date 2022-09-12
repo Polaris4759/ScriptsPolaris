@@ -1,0 +1,195 @@
+#!/bin/bash
+
+#######################################
+# Script créé le : 11/09/2022 à 21:02 #
+#######################################
+
+###############
+# DESCRIPTION #
+###############
+
+#############
+# VARIABLES #
+#############
+
+
+chscript=$(dirname $(readlink -f $0))
+namescript=`basename "$(realpath $0)"`
+# Couleurs
+blue="\e[36m"
+red="\e[31m"
+green="\e[32m"
+orange="\e[33m"
+def="\e[0m"
+
+IpAdd=0
+DecToBin=0
+BinToDec=0
+IpAddBin=""
+
+#################
+# VERIFICATIONS #
+#################
+
+############
+# FONCTION #
+############
+
+# Fonctions couleurs
+printDef(){ printf "${def}${*}${def}"; }
+printRed(){ printf "${red}${*}${def}"; }
+printBlue(){ printf "${blue}${*}${def}"; }
+printGreen(){ printf "${green}${*}${def}"; }
+
+# Usage
+usage(){
+	echo "
+	Script de conversion d'adresse IP.
+
+	Options : 
+	-b : Conversion décimal vers binaire
+	-d : Conversion binaire vers décimal
+	"
+	exit $1
+}
+
+# Conversion décimal vers binaire
+convBin(){
+	Oct=$1
+	if [ $Oct -ge 128 ];then IpAddBin+="1";Oct=$(($Oct-128));else IpAddBin+="0";fi
+	if [ $Oct -ge 64 ];then IpAddBin+="1";Oct=$(($Oct-64));else IpAddBin+="0";fi
+	if [ $Oct -ge 32 ];then IpAddBin+="1";Oct=$(($Oct-32));else IpAddBin+="0";fi
+	if [ $Oct -ge 16 ];then IpAddBin+="1";Oct=$(($Oct-16));else IpAddBin+="0";fi
+	if [ $Oct -ge 8 ];then IpAddBin+="1";Oct=$(($Oct-8));else IpAddBin+="0";fi
+	if [ $Oct -ge 4 ];then IpAddBin+="1";Oct=$(($Oct-4));else IpAddBin+="0";fi
+	if [ $Oct -ge 2 ];then IpAddBin+="1";Oct=$(($Oct-2));else IpAddBin+="0";fi
+	if [ $Oct -ge 1 ];then IpAddBin+="1";Oct=$(($Oct-1));else IpAddBin+="0";fi
+	IpAddBin+="."
+}
+
+##########
+# SCRIPT #
+##########
+
+# Si aucune option
+if [ $# -eq 0 ];then usage 1;fi
+
+# Récupération des options
+while getopts ":b:d:h" option
+do
+	case $option in
+		b)
+		printBlue "\nConversion décimal -> binaire\n"
+		IpAdd=$OPTARG
+		DecToBin=1
+		;;
+		d)
+		printBlue "\nConversion binaire -> décimal\n"
+		IpAdd=$OPTARG
+		BinToDec=1
+		;;
+		h)
+		usage 0
+		;;
+		\?)
+		printRed "\n$OPTARG : option invalide\n"
+		usage 1
+		;;
+		:)
+		printRed "\nL'option $OPTARG requiert un argument\n"
+		usage 1
+		;;
+	esac
+done
+
+# Si aucune adresse IP renseignée
+if [ ${#IpAdd} -eq 0 ];then printRed "Il faut entrer une adresse IP\n";usage 2;fi
+
+# Regex pour le format des adresses IP
+fmtIPDec="^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$"
+fmtIPBin="^[0-1]{8}.[0-1]{8}.[0-1]{8}.[0-1]{8}$"
+
+# Si option binaire vers décimal choisie
+if [ $BinToDec -eq 1 ];then
+	# Vérification du format de l'adresse renseignée
+	if [[ ! $IpAdd =~ $fmtIPBin ]];then 
+		printRed "L'adresse renseignée est incorrecte (${IpAdd})\n"
+		printRed "Exemple d'adresse correcte : 11000000.10101000.00000001.00000000\n"
+		usage 3
+	fi
+
+	# Variables utilisées durant la conversion
+	BinToDec=$IpAdd
+	pos=8
+	IpAddDecTemp=0
+	# Conversion
+	while [ ${#BinToDec} -gt 0 ];do
+		# Récupération du premier bit de l'adresse
+		bit=${BinToDec:0:1}
+		# Case selon la position du bit récupéré au-dessus, incrémentation de la valeur de l'octet dans une variable IpAddDecTemp
+		case $pos in 
+			8) IpAddDecTemp=$(($IpAddDecTemp+$bit*128)) ;;
+			7) IpAddDecTemp=$(($IpAddDecTemp+$bit*64)) ;;
+			6) IpAddDecTemp=$(($IpAddDecTemp+$bit*32)) ;;
+			5) IpAddDecTemp=$(($IpAddDecTemp+$bit*16)) ;;
+			4) IpAddDecTemp=$(($IpAddDecTemp+$bit*8)) ;;
+			3) IpAddDecTemp=$(($IpAddDecTemp+$bit*4)) ;;
+			2) IpAddDecTemp=$(($IpAddDecTemp+$bit*2)) ;;
+			1) IpAddDecTemp=$(($IpAddDecTemp+$bit*1)) ;;
+		esac
+		# Retrait du premier digit de l'adresse
+		BinToDec=${BinToDec:1:${#BinToDec}}
+		# Actions après avoir traité 1 octet en entier
+		if [ $pos -eq 0 ];then
+			# Réinitialisation de la position à 8 pour le traitement du prochain octet
+			pos=8
+			# Ajout de la valeur en décimal dans une variable
+			IpAddDec+="$IpAddDecTemp."
+			# Reset de la variable contenant la valeur de l'octet en décimal.
+			IpAddDecTemp=0
+		else
+			# Décrémentation de la position du digit traité
+			pos=$(($pos-1))
+		fi
+	done
+	# Ajout de la valeur du dernier octet
+	IpAddDec+=$IpAddDecTemp
+	# Affichage du résultat (Adresse binaire convertie en décimale)
+	printGreen "\nAdresse en binaire :"
+	printDef " $IpAdd\n"
+	printGreen "Adresse en décimal :"
+	printDef " $IpAddDec\n"
+fi
+
+# Si option "décimal vers binaire" choisie
+if [ $DecToBin -eq 1 ];then 
+	# Vérification du format de l'adresse IP
+	if [[ ! $IpAdd =~ $fmtIPDec ]];then 
+		printRed "L'adresse renseignée est incorrecte ($IpAdd)\n"
+		printRed "Exemple d'adresse correcte : 192.168.1.0\n"
+		usage 4
+	fi
+
+	# Séparation des octets en 4 variables
+	dec1=$(sed -E 's/([0-9]+)\.[0-9]+\.[0-9]+\.[0-9]+/\1/' <<< $IpAdd)
+	dec2=$(sed -E 's/[0-9]+\.([0-9]+)\.[0-9]+\.[0-9]+/\1/' <<< $IpAdd)
+	dec3=$(sed -E 's/[0-9]+\.[0-9]+\.([0-9]+)\.[0-9]+/\1/' <<< $IpAdd)
+	dec4=$(sed -E 's/[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)/\1/' <<< $IpAdd)
+	# Vérification que les octets ne soit pas supérieur à 255
+	if [ $dec1 -gt 255 ];then printRed "\nLe première octet ($dec1) est supérieur à 255\n\n";exit 5;fi
+	if [ $dec2 -gt 255 ];then printRed "\nLe première octet ($dec2) est supérieur à 255\n\n";exit 5;fi
+	if [ $dec3 -gt 255 ];then printRed "\nLe première octet ($dec3) est supérieur à 255\n\n";exit 5;fi
+	if [ $dec4 -gt 255 ];then printRed "\nLe première octet ($dec4) est supérieur à 255\n\n";exit 5;fi
+	# Lancement de la fonction de conversion pour chaque octet
+	for i in $dec1 $dec2 $dec3 $dec4;do convBin $i;done
+	# Suppression d'un point ajouté à la fin lors du traitement du dernier octet
+	IpAddBin=${IpAddBin::-1}
+	# Affichage du résultat (Adresse décimale convertie en binaire)
+	printGreen "$IpAddBin\n"
+fi
+
+#############################
+# SUPPRESSION FICHIERS TEMP #
+#############################
+
+echo ""
