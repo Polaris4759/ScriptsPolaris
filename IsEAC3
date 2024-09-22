@@ -1,0 +1,198 @@
+#!/bin/bash
+
+#########################################
+## Script créé le : 21/09/2024 à 23:03 ##
+#########################################
+
+#################
+## DESCRIPTION ##
+#################
+
+
+
+###############
+## VARIABLES ##
+###############
+
+
+chscript=$(dirname $(readlink -f $0))
+namescript=`basename "$(realpath $0)"`
+blue="\e[36m"
+red="\e[31m"
+green="\e[32m"
+orange="\e[33m"
+def="\e[0m"
+
+FIC=""
+mode=0
+SHOW=0
+len=0
+lenA=0
+
+
+###################
+## VERIFICATIONS ##
+###################
+
+
+
+##############
+## FONCTION ##
+##############
+
+# Fonctions couleurs
+printDef(){ printf "${def}${*}${def}"; }
+printRed(){ printf "${red}${*}${def}"; }
+printBlue(){ printf "${blue}${*}${def}"; }
+printGreen(){ printf "${green}${*}${def}"; }
+printOrange(){ printf "${orange}${*}${def}"; }
+echoDef(){ echo -e "${def}${*}${def}"; }
+echoRed(){ echo -e "${red}${*}${def}"; }
+echoBlue(){ echo -e "${blue}${*}${def}"; }
+echoGreen(){ echo -e "${green}${*}${def}"; }
+echoOrange(){ echo -e "${orange}${*}${def}"; }
+
+usage(){
+  
+  echo "
+Ce script vérifie le type de codec audio de fichiers vidéos.
+
+Options : 
+-a : All
+-n : Nom fichier
+-c : Current folder
+-C : Commande utilisée
+  "
+  exit $1
+
+}
+
+commandes(){
+  echo "ffprobe -v quiet -print_format json -show_format -show_streams <fichier> | grep -i eac"
+  exit 0
+}
+
+probe(){
+  FIC=$1
+  len=$2
+  res=$(ffprobe -v quiet -print_format json -show_format -show_streams "$FIC" | grep -ic eac)
+  printBlue "${FIC}%-$((${len}-${#FIC}))s : "
+  if [ $res -eq 0 ];then echoGreen "$res";else echoRed "$res";fi
+}
+
+probeShow(){
+  FIC=$1
+  len=$2
+  while read line;do 
+    declare -a tab
+#    line=$(sed 's/.*": "//g' <<< $line | sed 's/",//g')
+    line=$(sed 's/"//g' <<< $line)
+    tab+=("$line")
+#  done <<< $(ffprobe -v quiet -print_format json -show_format -show_streams "$FIC" | grep -i codec_name)
+  done <<< $(ffprobe -v quiet -print_format json -show_format -show_streams "$FIC" | jq '.streams[] | select(.codec_type=="audio") | .codec_name')
+  printBlue "${FIC}%-$((${len}-${#FIC}))s : "
+#  echoGreen "${tab[@]}"
+  for i in ${tab[@]};do 
+    val=${tab[$i]}
+    if [[ $val =~ eac ]];then printRed "$val ";
+    elif [[ $val =~ aac ]];then printGreen "$val ";
+    elif [[ $val =~ ac3 ]];then printGreen "$val ";
+    else printDef "$val ";
+    fi
+  done
+  echo ""
+  unset tab
+
+}
+
+
+############
+## SCRIPT ##
+############
+
+
+while getopts ":acCn:s" option
+#Avec les deux points en début de ligne, l'erreur ne s'affichera pas dans le terminal
+#Avec les deux points après une des options, cela indique que cette option requiert un argument
+do
+  case $option in
+    a)
+    mode=1
+    ;;
+    c)
+    mode=2
+    ;;
+    C)
+    commandes
+    ;;
+    n)
+    FIC=${OPTARG}
+    ;;
+    s)
+    SHOW=1
+    ;;
+
+    #Le cas suivant permet de faire certaines actions si l'option est invalide
+    \?)
+    echo "$OPTARG : option invalide"
+    exit 1
+    ;;
+    #Le cas suivant (:) permet de faire certaines actions si l'option requiert un argument mais que ce dernier est manquant
+    :)
+    echo "L'option $OPTARG requiert un argument"
+    exit 1
+    ;;
+  esac
+done
+
+if [ ${mode} -eq 0 ] && [ ${#FIC} -eq 0 ];then printRed "Il faut au moins une des options suivantes : a ou c ou n";usage 1;fi
+
+# FILE
+if [ ${#FIC} -gt 0 ];then 
+  len=${#FIC}
+  if [ $SHOW -eq 0 ];then probe $FIC $len
+  elif [ $SHOW -eq 1 ];then probeShow $FIC $len
+  else echoRed "Erreur FIC SHOW : Vérifier le script"
+  fi
+# ALL
+elif [ ${mode} -eq 1 ];then
+  # LENGTH CALCULATION
+  while read line;do 
+    lenA=${#line}
+    if [ $len -lt $lenA ];
+      then len=$lenA
+    fi
+  done <<< $(find . -type f -iname "*mkv" -o -iname "*mp4")
+  # FILES PROBE
+  find . -type f -iname "*mkv" -o -iname "*mp4" | while read line;do 
+    if [ $SHOW -eq 0 ];then probe "$line" $len
+      elif [ $SHOW -eq 1 ];then probeShow "$line" $len
+      else echoRed "Erreur ALL SHOW : Vérifier le script"
+    fi
+  done
+  exit 0
+# CURRENT
+elif [ ${mode} -eq 2 ];then 
+  # LENGTH CALCULATION
+  while read line;do 
+    lenA=${#line}
+    if [ $len -lt $lenA ];
+      then len=$lenA
+    fi
+  done <<< $(find . -type f -iname "*mkv" -o -iname "*mp4")
+  # FILES PROBE
+  find . -maxdepth 1 -type f -iname "*mkv" -o -iname "*mp4" | while read line;do
+    if [ $SHOW -eq 0 ];then probe "$line" $len
+      elif [ $SHOW -eq 1 ];then probeShow "$line" $len
+      else echoRed "Erreur CURRENT SHOW : Vérifier le script"
+    fi
+  done
+  exit 0
+# ELSE
+else printRed "Erreur MODE CHOICE : Vérifier script";fi
+
+
+###############################
+## SUPPRESSION FICHIERS TEMP ##
+###############################
+
